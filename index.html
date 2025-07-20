@@ -1,0 +1,1160 @@
+<!DOCTYPE html>
+<html lang="bn">
+  <head>
+    <script>
+      document.addEventListener("contextmenu", (event) =>
+        event.preventDefault()
+      );
+      document.addEventListener("keydown", (event) => {
+        if (
+          (event.ctrlKey &&
+            ["u", "s", "i", "j"].includes(event.key.toLowerCase())) ||
+          event.key === "F12"
+        ) {
+          event.preventDefault();
+        }
+      });
+    </script>
+
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Online Exam</title>
+    <!-- Chart.js CDN -->
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&display=swap");
+
+      body {
+        font-family: "Hind Siliguri", sans-serif;
+        margin: 0;
+        padding: 0;
+        background-color: #f4f4f4;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+      }
+
+      .container {
+        font-family: "Hind Siliguri", sans-serif;
+        width: 100%;
+        margin: auto;
+        background-color: white;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        min-height: 80vh;
+      }
+
+      .exam-content {
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+
+      h1 {
+        color: #1b0b54;
+        text-align: center;
+        margin-bottom: 10px;
+      }
+
+      #timer {
+        font-size: 20px;
+        color: #1b0b54;
+        margin-bottom: 5px;
+        font-weight: normal;
+        text-align: center;
+      }
+
+      #exam-info {
+        font-size: 16px;
+        color: black;
+        margin-bottom: 20px;
+        text-align: center;
+      }
+
+      #exam {
+        width: 100%;
+        min-height: 100px;
+      }
+
+      .chart-container {
+        width: 200px;
+        height: 200px;
+        margin: 10px auto;
+        background-color: #f9f9f9;
+        border-radius: 15px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        display: none;
+        padding: 10px;
+      }
+
+      .chart-container.visible {
+        display: block;
+      }
+
+      .question-container {
+        text-align: left;
+        margin-bottom: 20px;
+        display: block;
+      }
+
+      .question-label {
+        font-weight: bold;
+        color: #1b0b54;
+        margin-bottom: 10px;
+      }
+
+      .options {
+        margin-top: 10px;
+      }
+
+      .option {
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+        cursor: pointer;
+        padding: 5px;
+        border-radius: 5px;
+        text-transform: uppercase;
+      }
+
+      .circle {
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        border: 2px solid #1b0b54;
+        margin-right: 10px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        color: #1b0b54;
+        font-weight: bold;
+        font-size: 18px;
+      }
+
+      .selected .circle {
+        background-color: #1b0b54;
+        color: white;
+      }
+
+      .correct-text {
+        color: green !important;
+      }
+
+      .incorrect-text {
+        color: #ff0800 !important;
+      }
+
+      .unattempted-text {
+        color: orange !important;
+      }
+
+      #submitBtn {
+        font-family: hind siliguri;
+        padding: 15px 30px;
+        background-color: #1b0b54;
+        color: white;
+        border: none;
+        cursor: pointer;
+        font-size: 18px;
+        font-weight: bold;
+        border-radius: 10px;
+        margin-top: 20px;
+        width: 200px;
+        transition: background-color 0.3s ease;
+      }
+
+      #submitBtn:hover {
+        background-color: #1b0b54;
+      }
+
+      .popup {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background-color: white;
+        padding: 20px;
+        width: 300px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+        border-radius: 10px;
+        text-align: center;
+        display: none;
+        z-index: 1000;
+        transition: transform 0.5s ease, opacity 0.5s ease;
+      }
+
+      .popup.slide-out {
+        transform: translate(-50%, -100%);
+        opacity: 0;
+      }
+
+      .popup-header {
+        background-color: #1b0b54;
+        color: white;
+        padding: 10px;
+        font-size: 20px;
+        font-weight: bold;
+        border-radius: 10px 10px 0 0;
+      }
+
+      .popup-body {
+        padding: 15px;
+      }
+
+      .popup-body p {
+        margin: 10px 0;
+      }
+
+      .confirm-btn {
+        font-family: hind siliguri;
+        background-color: #34c759;
+        color: white;
+        padding: 8px 15px;
+        border: none;
+        cursor: pointer;
+        font-size: 14px;
+        border-radius: 5px;
+        margin: 5px;
+      }
+
+      .confirm-btn:hover {
+        background-color: #34c759;
+      }
+
+      .cancel-btn {
+        background-color: #ff3b30;
+        color: white;
+        padding: 8px 15px;
+        border: none;
+        cursor: pointer;
+        font-size: 14px;
+        border-radius: 5px;
+        margin: 5px;
+      }
+
+      .cancel-btn:hover {
+        background-color: #e02b21;
+      }
+
+      .explanation-dropdown {
+        display: none;
+        margin-top: 10px;
+      }
+
+      .explanation-dropdown.visible {
+        display: block;
+      }
+
+      .explanation-btn {
+        background-color: #1b0b54;
+        color: white;
+        padding: 8px 15px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 14px;
+        font-family: "Hind Siliguri", sans-serif;
+        width: 40%;
+        text-align: left;
+        position: relative;
+      }
+
+      .explanation-btn:hover {
+        background-color: #1b0b54;
+      }
+
+      .explanation-btn::after {
+        content: "▼";
+        position: absolute;
+        right: 10px;
+        font-size: 12px;
+      }
+
+      .explanation-btn.active::after {
+        content: "▲";
+      }
+
+      .explanation-content {
+        display: none;
+        padding: 15px;
+        background-color: #f9f9f9;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        font-size: 14px;
+        color: #000000;
+        text-align: left;
+        max-height: 450px;
+        overflow-y: auto;
+        margin-top: 5px;
+      }
+
+      .explanation-content.visible {
+        display: block;
+      }
+
+      .explanation-content p {
+        margin: 0 0 10px 0;
+      }
+
+      .explanation-content ul {
+        margin: 0;
+        padding-left: 20px;
+      }
+
+      .explanation-content li {
+        margin-bottom: 5px;
+      }
+
+      .explanation-content strong {
+        color: #1b0b54;
+      }
+
+      .explanation-label {
+        font-weight: bold;
+        color: #1b0b54;
+        margin-bottom: 10px;
+        display: block;
+      }
+
+      .locked .option {
+        pointer-events: none;
+        cursor: default;
+      }
+
+      .locked .option.selected {
+        pointer-events: none;
+        cursor: default;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="container" id="examContainer">
+      <div class="exam-content">
+        <h1>বোটানি অনুশীলন</h1>
+        <div id="timer"></div>
+        <div id="exam-info"></div>
+        <div class="chart-container">
+          <canvas id="scoreChart"></canvas>
+        </div>
+        <div id="exam">
+          <!-- Questions will be generated dynamically -->
+        </div>
+        <button id="submitBtn">সাবমিট</button>
+      </div>
+    </div>
+
+    <div class="popup" id="scorePopup">
+      <div class="popup-header">তোমার স্কোর</div>
+      <div class="popup-body">
+        <p><strong>মোট প্রশ্ন:</strong> <span id="totalQuestions"></span></p>
+        <p>
+          <strong>উত্তর দিয়েছো:</strong>
+          <span style="color: #000000" id="answered"></span>
+        </p>
+        <p>
+          <strong>সঠিক উত্তর:</strong>
+          <span style="color: #0ab853" id="correctAnswers"></span>
+        </p>
+        <p>
+          <strong>ভুল উত্তর:</strong>
+          <span style="color: #f81010" id="wrongAnswers"></span>
+        </p>
+        <p>
+          <strong>অনুত্তরিত:</strong>
+          <span style="color: #ffc801" id="unanswered"></span>
+        </p>
+        <p><strong>তোমার চূড়ান্ত স্কোর:</strong></p>
+        <h2 style="color: #1b0b54"><span id="finalScore"></span></h2>
+        <form id="scoreForm" action="https://formspree.io/f/xpby" method="POST">
+          <input type="hidden" name="userID" id="formUserID" />
+          <input type="hidden" name="finalScore" id="formFinalScore" />
+          <input type="hidden" name="correctAnswers" id="formCorrectAnswers" />
+          <input type="hidden" name="wrongAnswers" id="formWrongAnswers" />
+          <input type="hidden" name="unanswered" id="formUnanswered" />
+          <button
+            type="submit"
+            class="confirm-btn"
+            style="background-color: #1b0b54"
+          >
+            <b>ওকে</b>
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <div class="popup" id="confirmPopup">
+      <div class="popup-header">কনফার্ম করো</div>
+      <div class="popup-body">
+        <p>
+          ভালো করে দেখে নাও! <br />
+          পরীক্ষা শেষ করতে চাও তো?
+        </p>
+        <button class="confirm-btn" onclick="confirmSubmit()">
+          <b>হ্যাঁ</b>
+        </button>
+        <button class="cancel-btn" onclick="cancelSubmit()"><b>না</b></button>
+      </div>
+    </div>
+
+    <script>
+      let chartInstance = null;
+
+      document.addEventListener("DOMContentLoaded", function () {
+        console.log("DOM fully loaded and parsed");
+        const examContainer = document.getElementById("examContainer");
+        if (!examContainer) {
+          console.error("Exam container not found!");
+          return;
+        }
+        try {
+          sessionStorage.setItem("isLoggedIn", "true");
+          sessionStorage.setItem("userID", "anonymous");
+          console.log(
+            "Session storage set: isLoggedIn = true, userID = anonymous"
+          );
+        } catch (e) {
+          console.error("Session storage error:", e);
+        }
+        examContainer.style.display = "block";
+        console.log("Exam container displayed");
+        startTimer();
+        generateQuestions();
+
+        window.addEventListener("beforeunload", function (event) {
+          if (
+            examContainer.style.display === "block" &&
+            sessionStorage.getItem("isLoggedIn") === "true"
+          ) {
+            autoSubmitScore();
+          }
+        });
+      });
+
+      const questions = [
+        {
+          id: 1,
+          question: "পিরানহা কোন প্রাণিভৌগোলিক অঞ্চলের প্রাণী?",
+          options: {
+            a: "ওরিয়েন্টাল",
+            b: "ইথিওপিয়ান",
+            c: "নিওট্রপিক্যাল",
+            d: "নিআর্কটিক",
+          },
+          correct: "c",
+          explanation:
+            "<p>পিরানহা মাছ নিওট্রপিক্যাল প্রাণিভৌগোলিক অঞ্চলের অন্তর্ভুক্ত। এই অঞ্চলটি মূলত মধ্য ও দক্ষিণ আমেরিকাকে নিয়ে গঠিত এবং এখানে এই মাংসাশী মাছগুলো স্বাদু পানিতে বাস করে। এদের তীক্ষ্ণ দাঁত এবং দলবদ্ধভাবে শিকার করার প্রবণতার জন্য এরা সুপরিচিত।</p>",
+        },
+        {
+          id: 2,
+          question: "মিঠাপানির এন্ডেমিক গোত্রের মাছ কোনটি?",
+          options: {
+            a: "টেংরা",
+            b: "মাগুর",
+            c: "পাবদা",
+            d: "কই",
+          },
+          correct: "d",
+          explanation:
+            "<p>কই মাছ (Anabas testudineus) মিঠাপানির এন্ডেমিক গোত্রের অন্তর্ভুক্ত। এটি বাংলাদেশ এবং এর পার্শ্ববর্তী অঞ্চলের স্থানীয় মাছ এবং এখানকার স্বাদু পানিতেই এদের প্রধান আবাসস্থল। এরা প্রতিকূল পরিবেশেও বেঁচে থাকতে পারে এবং অল্প অক্সিজেনযুক্ত পানিতেও শ্বাস নিতে সক্ষম।</p>",
+        },
+        {
+          id: 3,
+          question: "মারসুপিয়াল স্তন্যপায়ী প্রাণী কোন মহাদেশে পাওয়া যায়?",
+          options: {
+            a: "এশিয়া",
+            b: "ইউরোপ",
+            c: "অস্ট্রেলিয়া",
+            d: "আফ্রিকা",
+          },
+          correct: "c",
+          explanation:
+            "<p>মারসুপিয়াল স্তন্যপায়ী প্রাণী প্রধানত অস্ট্রেলিয়া মহাদেশে পাওয়া যায়। ক্যাঙ্গারু, কোয়ালা এবং ওপোসাম এর উল্লেখযোগ্য উদাহরণ। এদের থলিতে অপরিণত বাচ্চা বহন করার বৈশিষ্ট্য রয়েছে, যেখানে বাচ্চা জন্মগ্রহণের পর পূর্ণাঙ্গ না হওয়া পর্যন্ত বেড়ে ওঠে।</p>",
+        },
+        {
+          id: 4,
+          question: "আর্মাডিলো প্রাণিটির উপস্থিতি কোন মহাদেশে পাওয়া যায়?",
+          options: {
+            a: "ইউরোপ",
+            b: "দক্ষিণ আমেরিকা",
+            c: "আফ্রিকা",
+            d: "উত্তর আমেরিকা",
+          },
+          correct: "b",
+          explanation:
+            "<p>আর্মাডিলো প্রাণিটির প্রধান উপস্থিতি দক্ষিণ আমেরিকা মহাদেশে দেখা যায়। কিছু প্রজাতি উত্তর আমেরিকাতেও পাওয়া যায়, তবে এদের উৎপত্তি এবং বেশিরভাগ প্রজাতি দক্ষিণ আমেরিকাতেই সীমাবদ্ধ। এদের শরীর শক্ত বর্ম দ্বারা আবৃত থাকে যা তাদের আত্মরক্ষায় সাহায্য করে।</p>",
+        },
+        {
+          id: 5,
+          question: "বাংলাদেশ কোন প্রাণিভৌগোলিক অঞ্চলে অবস্থিত?",
+          options: {
+            a: "ইথিওপিয়ান",
+            b: "ওরিয়েন্টাল",
+            c: "নিওট্রপিক্যাল",
+            d: "অস্ট্রেলিয়ান",
+          },
+          correct: "b",
+          explanation:
+            "<p>বাংলাদেশ ওরিয়েন্টাল প্রাণিভৌগোলিক অঞ্চলে অবস্থিত। এই অঞ্চলটি এশিয়া মহাদেশের গ্রীষ্মমন্ডলীয় অংশকে অন্তর্ভুক্ত করে এবং জীববৈচিত্র্যের দিক থেকে অত্যন্ত সমৃদ্ধ। ভারত, মায়ানমার, থাইল্যান্ড এবং শ্রীলঙ্কার মতো দেশগুলোও এই অঞ্চলের অন্তর্ভুক্ত।</p>",
+        },
+        {
+          id: 6,
+          question: "ওরিয়েন্টাল অঞ্চলের এন্ডেমিক প্রাণী কোনটি?",
+          options: {
+            a: "ঘোড়া",
+            b: "ঘড়িয়াল",
+            c: "মহিষ",
+            d: "টিয়া",
+          },
+          correct: "b",
+          explanation:
+            "<p>ঘড়িয়াল (Gavialis gangeticus) ওরিয়েন্টাল অঞ্চলের একটি এন্ডেমিক প্রাণী। এটি মূলত ভারতীয় উপমহাদেশে নদ-নদীতে বাস করে এবং এর লম্বা চোয়ালের জন্য পরিচিত। এটি বর্তমানে বিপন্ন প্রজাতির অন্তর্ভুক্ত।</p>",
+        },
+        {
+          id: 7,
+          question: "প্লাটিপাস ও ক্যাঙ্গারো কোন অঞ্চলে পাওয়া যায়?",
+          options: {
+            a: "ওরিয়েন্টাল",
+            b: "অস্ট্রেলিয়ান",
+            c: "ইথিওপিয়ান",
+            d: "নিআর্কটিক",
+          },
+          correct: "b",
+          explanation:
+            "<p>প্লাটিপাস (Ornithorhynchus anatinus) ও ক্যাঙ্গারু (Macropus giganteus) অস্ট্রেলিয়ান প্রাণিভৌগোলিক অঞ্চলে পাওয়া যায়। এই দুটি প্রাণীই অস্ট্রেলিয়ার স্থানীয় এবং এখানকার বিশেষ পরিবেশের সাথে অভিযোজিত। প্লাটিপাস ডিম পাড়ে এমন স্তন্যপায়ী এবং ক্যাঙ্গারু মারসুপিয়াল শ্রেণির অন্তর্ভুক্ত।</p>",
+        },
+        {
+          id: 8,
+          question: "নিচের কোন দুটি ওরিয়েন্টাল অঞ্চলের এন্ডেমিক মাছ?",
+          options: {
+            a: "রাণী মাছ ও পাঙ্গাস",
+            b: "চিতল ও পাইকমাথা",
+            c: "সরপুটি ও টেংরা",
+            d: "মহাশোল ও চ্যাগা",
+          },
+          correct: "d",
+          explanation:
+            "<p>মহাশোল (Tor putitora) ও চ্যাগা (Channa gachua) ওরিয়েন্টাল অঞ্চলের এন্ডেমিক মাছ। এই দুটি মাছ ভারতীয় উপমহাদেশ এবং এর পার্শ্ববর্তী অঞ্চলে বিশেষভাবে পাওয়া যায়। মহাশোল হিমালয়ের পাদদেশের নদীগুলোতে এবং চ্যাগা ছোট জলাশয় ও খাল-বিলে বাস করে।</p>",
+        },
+        {
+          id: 9,
+          question: "নিচের কোনটি ওরিয়েন্টাল অঞ্চলের এন্ডেমিক পাখি?",
+          options: {
+            a: "Pavo cristatus",
+            b: "Pycnonotus jocosus",
+            c: "Chloropsis hardwickii",
+            d: "Alcedo atthis",
+          },
+          correct: "c",
+          explanation:
+            "<p>Chloropsis hardwickii (অরেঞ্জ-বেলিড লিফবার্ড) ওরিয়েন্টাল অঞ্চলের একটি এন্ডেমিক পাখি। এটি দক্ষিণ ও দক্ষিণ-পূর্ব এশিয়ার বনাঞ্চলে দেখা যায়। এদের উজ্জ্বল রঙ এবং ফল ও পোকামাকড় খাওয়ার অভ্যাস রয়েছে।</p>",
+        },
+        {
+          id: 10,
+          question: "অস্ট্রেলিয়ান অঞ্চলের অন্তর্ভুক্ত কোনটি?",
+          options: {
+            a: "লেমুর",
+            b: "উটপাখি",
+            c: "এমব্যাট",
+            d: "ময়ূর",
+          },
+          correct: "c",
+          explanation:
+            "<p>এমব্যাট (Vombatus ursinus) অস্ট্রেলিয়ান অঞ্চলের অন্তর্ভুক্ত। এটি এক প্রকার মারসুপিয়াল স্তন্যপায়ী প্রাণী যা অস্ট্রেলিয়াতে পাওয়া যায়। এরা মাটির নিচে গর্ত করে বাস করে এবং নিশাচর প্রাণী।</p>",
+        },
+        {
+          id: 11,
+          question: "বাংলাদেশ কোন প্রাণিভৌগোলিক উপ-অঞ্চলের অন্তর্ভুক্ত?",
+          options: {
+            a: "ইন্দো-চীন",
+            b: "সিংহলীয়",
+            c: "ইন্দো-মালয়",
+            d: "ভারতীয়",
+          },
+          correct: "c",
+          explanation:
+            "<p>বাংলাদেশ ইন্দো-মালয় প্রাণিভৌগোলিক উপ-অঞ্চলের অন্তর্ভুক্ত। এই উপ-অঞ্চলটি বৃহত্তর ওরিয়েন্টাল অঞ্চলের একটি অংশ এবং দক্ষিণ-পূর্ব এশিয়ার জীববৈচিত্র্যে সমৃদ্ধ এলাকা। এখানকার জলবায়ু, উদ্ভিদ ও প্রাণী প্রজাতির বৈশিষ্ট্য এই উপ-অঞ্চলের সাথে সামঞ্জস্যপূর্ণ।</p>",
+        },
+        {
+          id: 12,
+          question: "কোনটি ওরিয়েন্টাল অঞ্চলের এন্ডেমিক প্রাণী?",
+          options: {
+            a: "ব্লাকফিস",
+            b: "প্লাটিপাস",
+            c: "সবুজ রুই",
+            d: "লেমুর",
+          },
+          correct: "c",
+          explanation:
+            "<p>সবুজ রুই (Bangana devdevi) ওরিয়েন্টাল অঞ্চলের একটি এন্ডেমিক প্রাণী। এটি ভারতীয় উপমহাদেশের কিছু নির্দিষ্ট অঞ্চলে পাওয়া যায়। এই মাছ সাধারণত পরিষ্কার, দ্রুত প্রবাহিত নদী ও ঝর্ণায় বাস করে।</p>",
+        },
+        {
+          id: 13,
+          question: "বার্ডস অব প্যারাডাইস কোন প্রাণিভৌগোলিক অঞ্চলে বাস করে?",
+          options: {
+            a: "ওরিয়েন্টাল",
+            b: "ইথিওপিয়ান",
+            c: "অস্ট্রেলিয়ান",
+            d: "নিআর্কটিক",
+          },
+          correct: "c",
+          explanation:
+            "<p>বার্ডস অব প্যারাডাইস অস্ট্রেলিয়ান প্রাণিভৌগোলিক অঞ্চলে বাস করে। এই দৃষ্টিনন্দন পাখিগুলো নিউ গিনি এবং এর পার্শ্ববর্তী দ্বীপগুলোতে বিশেষভাবে দেখা যায়। এদের অসাধারণ পালক এবং প্রজননকালীন নৃত্য অত্যন্ত আকর্ষণীয়।</p>",
+        },
+        {
+          id: 14,
+          question: "কন্টিনেন্টাল ড্রিফট মতবাদের প্রবক্তা কে?",
+          options: {
+            a: "স্ক্লেটার",
+            b: "ওয়ালেস",
+            c: "ওয়েবার",
+            d: "ওয়েগনার",
+          },
+          correct: "d",
+          explanation:
+            "<p>কন্টিনেন্টাল ড্রিফট মতবাদের প্রবক্তা হলেন আলফ্রেড ওয়েগনার (Alfred Wegener)। তিনি ১৯১২ সালে এই তত্ত্বটি প্রস্তাব করেন, যেখানে বলা হয় যে পৃথিবীর মহাদেশগুলো একসময় একত্রিত ছিল এবং ধীরে ধীরে সরে গিয়ে বর্তমান অবস্থানে এসেছে। তার এই তত্ত্ব প্লেট টেকটোনিক্সের ভিত্তি স্থাপন করে।</p>",
+        },
+        {
+          id: 15,
+          question: "নির্দিষ্ট অঞ্চলে সীমাবদ্ধ উদ্ভিদকে কী বলা হয়?",
+          options: {
+            a: "এক্সোটিক",
+            b: "এনডেনজার্ড",
+            c: "ইনসিটু",
+            d: "এন্ডেমিক",
+          },
+          correct: "d",
+          explanation:
+            "<p>নির্দিষ্ট অঞ্চলে সীমাবদ্ধ উদ্ভিদকে এন্ডেমিক বলা হয়। এই উদ্ভিদ প্রজাতিগুলো কেবল একটি নির্দিষ্ট ভৌগোলিক এলাকায় প্রাকৃতিকভাবে জন্মায় এবং অন্য কোথাও পাওয়া যায় না। পরিবেশগত পরিবর্তন বা বাসস্থান ধ্বংসের কারণে এন্ডেমিক প্রজাতিগুলো বিশেষভাবে ঝুঁকিপূর্ণ হয়।</p>",
+        },
+        {
+          id: 16,
+          question: "কোনটি Aves শ্রেণির অন্তর্গত?",
+          options: {
+            a: "Macaca silenus",
+            b: "Rana danieli",
+            c: "Badis badis",
+            d: "Pavo muticus",
+          },
+          correct: "d",
+          explanation:
+            "<p>Pavo muticus (সবুজ ময়ূর) Aves শ্রেণির অন্তর্গত, যা পাখি শ্রেণী হিসেবে পরিচিত। Macaca silenus (সিংহলাঙ্গুর বানর) স্তন্যপায়ী, Rana danieli (ড্যানিয়েলস ফ্রগ) উভচর এবং Badis badis (স্কারলেট ব্যাডিস) মাছ শ্রেণির অন্তর্ভুক্ত। Aves শ্রেণির বৈশিষ্ট্য হলো পালক, ডানা এবং ডিম পাড়া।</p>",
+        },
+        {
+          id: 17,
+          question: "বাংলাদেশে উভচর প্রাণীর প্রজাতি সংখ্যা কত?",
+          options: {
+            a: "৩৪টি",
+            b: "৩৫টি",
+            c: "৩৬টি",
+            d: "৩৭টি",
+          },
+          correct: "a",
+          explanation:
+            "<p>বাংলাদেশে উভচর প্রাণীর প্রজাতি সংখ্যা ৩৪টি। এই সংখ্যা বিভিন্ন গবেষণা এবং জরিপের মাধ্যমে নির্ণয় করা হয়েছে এবং এটি পরিবর্তনশীল হতে পারে। এই উভচর প্রাণীরা প্রধানত ব্যাঙ, কুনোব্যাঙ এবং গেছো ব্যাঙ নিয়ে গঠিত।</p>",
+        },
+        {
+          id: 18,
+          question: "কোন দেশটি ওরিয়েন্টাল অঞ্চলের অন্তর্ভুক্ত?",
+          options: {
+            a: "কানাডা",
+            b: "ব্রাজিল",
+            c: "অস্ট্রেলিয়া",
+            d: "শ্রীলঙ্কা",
+          },
+          correct: "d",
+          explanation:
+            "<p>শ্রীলঙ্কা ওরিয়েন্টাল প্রাণিভৌগোলিক অঞ্চলের অন্তর্ভুক্ত। এই দ্বীপ দেশটি ভারতীয় উপমহাদেশের নিকটবর্তী এবং এখানকার জীববৈচিত্র্য ওরিয়েন্টাল অঞ্চলের বৈশিষ্ট্যের সাথে সঙ্গতিপূর্ণ। এই অঞ্চলে বিভিন্ন ধরনের স্তন্যপায়ী প্রাণী, পাখি, সরীসৃপ এবং উভচর প্রাণী দেখা যায়।</p>",
+        },
+      ];
+
+      const totalQuestions = questions.length;
+      let timeLeft = Math.floor(totalQuestions / 2) * 60;
+      const timerElement = document.getElementById("timer");
+      let timerInterval;
+
+      function updateTimer() {
+        const minutes = Math.floor(timeLeft / 60);
+        const seconds = timeLeft % 60;
+        timerElement.innerText = `${toBengaliNumber(
+          minutes
+        )} মিনিট ${toBengaliNumber(seconds)} সেকেন্ড`;
+
+        if (timeLeft > 0) {
+          timeLeft--;
+        } else {
+          stopTimer();
+          confirmSubmit();
+        }
+      }
+
+      function startTimer() {
+        console.log("Starting timer");
+        timerElement.innerText = `${toBengaliNumber(
+          Math.floor(timeLeft / 60)
+        )} মিনিট ${toBengaliNumber(timeLeft % 60)} সেকেন্ড`;
+        timerInterval = setInterval(updateTimer, 1000);
+      }
+
+      function stopTimer() {
+        clearInterval(timerInterval);
+        console.log("Timer stopped");
+      }
+
+      function toBengaliNumber(num) {
+        const bengaliDigits = [
+          "০",
+          "১",
+          "২",
+          "৩",
+          "৪",
+          "৫",
+          "৬",
+          "৭",
+          "৮",
+          "৯",
+        ];
+        let numStr = num.toString();
+
+        let isNegative = num < 0;
+        if (isNegative) {
+          numStr = numStr.substring(1);
+        }
+
+        if (numStr.includes(".")) {
+          let [integerPart, decimalPart] = numStr.split(".");
+          let integerBengali = integerPart
+            .split("")
+            .map((digit) => bengaliDigits[parseInt(digit)])
+            .join("");
+          let decimalBengali = decimalPart
+            .split("")
+            .map((digit) => bengaliDigits[parseInt(digit)])
+            .join("");
+          return (
+            (isNegative ? "−" : "") + integerBengali + "." + decimalBengali
+          );
+        } else {
+          let integerBengali = numStr
+            .split("")
+            .map((digit) => bengaliDigits[parseInt(digit)])
+            .join("");
+          return (isNegative ? "−" : "") + integerBengali;
+        }
+      }
+
+      function shuffleArray(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [array[i], array[j]] = [array[j], array[i]];
+        }
+        return array;
+      }
+
+      function generateQuestions() {
+        console.log("Generating questions");
+        const examContainer = document.querySelector("#exam");
+        if (!examContainer) {
+          console.error("Exam container (#exam) not found!");
+          return;
+        }
+        examContainer.innerHTML = "";
+        console.log("Questions array:", questions);
+        const shuffledQuestions = shuffleArray([...questions]);
+        shuffledQuestions.forEach((question, index) => {
+          console.log(`Generating question ${index + 1}:`, question);
+          const questionDiv = document.createElement("div");
+          questionDiv.classList.add("question-container");
+          questionDiv.setAttribute("data-question", question.id);
+          questionDiv.setAttribute("data-correct", question.correct);
+
+          let optionsHTML = "";
+          for (let option in question.options) {
+            optionsHTML += `
+                            <label class="option" data-option="${option}">
+                              <div class="circle">${option}</div>
+                              <span class="option-text">${question.options[option]}</span>
+                            </label>
+                          `;
+          }
+
+          const explanationHTML = question.explanation
+            ? `<div class="explanation-dropdown">
+                               <button class="explanation-btn">ব্যাখ্যা দেখো</button>
+                               <div class="explanation-content">
+                                 <div class="explanation-label">ব্যাখ্যা:</div>
+                                 ${question.explanation}
+                               </div>
+                             </div>`
+            : "";
+
+          questionDiv.innerHTML = `
+                          <p class="question-label">${index + 1}. ${
+            question.question
+          }</p>
+                          <div class="options">
+                            ${optionsHTML}
+                          </div>
+                          ${explanationHTML}
+                        `;
+          examContainer.appendChild(questionDiv);
+          console.log(`Appended question ${index + 1} to exam container`);
+        });
+
+        const questionContainers = document.querySelectorAll(
+          ".question-container"
+        );
+        console.log(`Found ${questionContainers.length} question containers`);
+        questionContainers.forEach((container, idx) => {
+          console.log(`Setting question ${idx + 1} to visible`);
+          container.style.display = "block";
+        });
+
+        document.querySelectorAll(".option").forEach((option) => {
+          option.addEventListener(
+            "click",
+            function (e) {
+              e.preventDefault();
+              const parent = this.closest(".question-container");
+              if (parent.classList.contains("locked")) return;
+              parent.classList.add("locked");
+              parent.querySelectorAll(".option").forEach((el) => {
+                if (el !== this) {
+                  el.style.pointerEvents = "none";
+                  el.style.cursor = "default";
+                }
+                el.classList.remove("selected");
+              });
+              this.classList.add("selected");
+              console.log(
+                `Option selected for question ${parent.getAttribute(
+                  "data-question"
+                )}: ${this.getAttribute("data-option")}`
+              );
+            },
+            { once: true }
+          );
+        });
+
+        document.querySelectorAll(".explanation-btn").forEach((btn) => {
+          btn.addEventListener("click", function () {
+            const content = this.nextElementSibling;
+            content.classList.toggle("visible");
+            this.classList.toggle("active");
+            console.log("Toggled explanation visibility");
+          });
+        });
+
+        const examInfo = document.getElementById("exam-info");
+        if (examInfo) {
+          examInfo.innerText = `পূর্ণ নম্বরঃ ${toBengaliNumber(
+            totalQuestions
+          )}`;
+          console.log("Exam info updated");
+        } else {
+          console.error("Exam info element not found!");
+        }
+      }
+
+      function initializeChart() {
+        console.log("Initializing chart");
+        const ctx = document.getElementById("scoreChart").getContext("2d");
+        chartInstance = new Chart(ctx, {
+          type: "pie",
+          data: {
+            labels: ["ঠিক উত্তর", "ভুল উত্তর", "অনুত্তরিত"],
+            datasets: [
+              {
+                data: [0, 0, 0],
+                backgroundColor: ["#34c759", "#ff3b30", "#007aff"],
+                borderColor: "#fff",
+                borderWidth: 2,
+                hoverOffset: 10,
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: "10%",
+            layout: {
+              padding: 10,
+            },
+            plugins: {
+              legend: {
+                position: "bottom",
+                labels: {
+                  font: {
+                    family: '"Hind Siliguri", sans-serif',
+                    size: 13,
+                    weight: "bold",
+                  },
+                  color: "#333",
+                  padding: 12,
+                  boxWidth: 14,
+                  generateLabels: (chart) => {
+                    const data = chart.data;
+                    return data.labels.map((label, i) => ({
+                      text: label,
+                      font: {
+                        family: '"Hind Siliguri", sans-serif',
+                      },
+                      fillStyle: data.datasets[0].backgroundColor[i],
+                      hidden: !chart.getDataVisibility(i),
+                      index: i,
+                    }));
+                  },
+                },
+              },
+              tooltip: {
+                backgroundColor: "rgba(0, 0, 0, 0.9)",
+                cornerRadius: 6,
+                titleFont: {
+                  family: '"Hind Siliguri", sans-serif',
+                  size: 14,
+                  weight: "bold",
+                },
+                bodyFont: {
+                  family: '"Hind Siliguri", sans-serif',
+                  size: 13,
+                },
+                padding: 10,
+                boxPadding: 5,
+              },
+            },
+            animation: {
+              animateScale: true,
+              animateRotate: true,
+              duration: 1000,
+              easing: "easeOutQuart",
+            },
+            elements: {
+              arc: {
+                borderRadius: 8,
+              },
+            },
+            onClick: (e, elements) => {
+              if (elements.length > 0) {
+                const index = elements[0].index;
+                const filter = ["correct", "wrong", "unanswered"][index];
+                filterQuestions(filter);
+              } else {
+                filterQuestions("all");
+              }
+            },
+          },
+        });
+        console.log("Chart initialized");
+      }
+
+      function filterQuestions(type) {
+        console.log(`Filtering questions by type: ${type}`);
+        document.querySelectorAll(".question-container").forEach((question) => {
+          const status = question.getAttribute("data-status");
+          if (type === "all" || status === type) {
+            question.style.display = "block";
+          } else {
+            question.style.display = "none";
+          }
+        });
+      }
+
+      function showConfirmPopup() {
+        console.log("Showing confirm popup");
+        document.getElementById("confirmPopup").style.display = "block";
+      }
+
+      function autoSubmitScore() {
+        console.log("Auto-submitting score");
+        stopTimer();
+        let score = 0,
+          total = questions.length,
+          answered = 0,
+          correct = 0,
+          wrong = 0,
+          unanswered = 0;
+
+        document.querySelectorAll(".question-container").forEach((question) => {
+          let correctAnswer = question.getAttribute("data-correct");
+          let selectedOption = question.querySelector(".option.selected");
+
+          if (selectedOption) {
+            answered++;
+            let chosenAnswer = selectedOption.getAttribute("data-option");
+            if (chosenAnswer === correctAnswer) {
+              score += 1;
+              correct++;
+              question.setAttribute("data-status", "correct");
+            } else {
+              score -= 0.25;
+              wrong++;
+              question.setAttribute("data-status", "wrong");
+            }
+          } else {
+            unanswered++;
+            question.setAttribute("data-status", "unanswered");
+          }
+        });
+
+        const userID = sessionStorage.getItem("userID") || "anonymous";
+        const formData = new FormData();
+        formData.append("userID", userID);
+        formData.append("finalScore", score.toFixed(2));
+        formData.append("correctAnswers", correct);
+        formData.append("wrongAnswers", wrong);
+        formData.append("unanswered", unanswered);
+
+        const url = "https://formspree.io/f/xpwy";
+        navigator.sendBeacon(url, formData);
+        console.log("Auto-submission sent via sendBeacon for userID:", userID);
+      }
+
+      function confirmSubmit() {
+        console.log("Confirming submission");
+        document.getElementById("confirmPopup").style.display = "none";
+        stopTimer();
+        let score = 0,
+          total = questions.length,
+          answered = 0,
+          correct = 0,
+          wrong = 0,
+          unanswered = 0;
+
+        document
+          .querySelectorAll(".question-container")
+          .forEach((question, index) => {
+            let correctAnswer = question.getAttribute("data-correct");
+            let selectedOption = question.querySelector(".option.selected");
+
+            if (selectedOption) {
+              answered++;
+              let chosenAnswer = selectedOption.getAttribute("data-option");
+              if (chosenAnswer === correctAnswer) {
+                selectedOption
+                  .querySelector(".option-text")
+                  .classList.add("correct-text");
+                score += 1;
+                correct++;
+                question.setAttribute("data-status", "correct");
+              } else {
+                selectedOption
+                  .querySelector(".option-text")
+                  .classList.add("incorrect-text");
+                question
+                  .querySelector(
+                    `[data-option="${correctAnswer}"] .option-text`
+                  )
+                  .classList.add("correct-text");
+                score -= 0.25;
+                wrong++;
+                question.setAttribute("data-status", "wrong");
+              }
+            } else {
+              question
+                .querySelector(`[data-option="${correctAnswer}"] .option-text`)
+                .classList.add("unattempted-text");
+              unanswered++;
+              question.setAttribute("data-status", "unanswered");
+            }
+            question.style.display = "block";
+
+            const explanationDropdown = question.querySelector(
+              ".explanation-dropdown"
+            );
+            if (explanationDropdown) {
+              explanationDropdown.classList.add("visible");
+            }
+          });
+
+        const chartContainer = document.querySelector(".chart-container");
+        chartContainer.classList.add("visible");
+        if (!chartInstance) {
+          initializeChart();
+        }
+        chartInstance.data.datasets[0].data = [correct, wrong, unanswered];
+        chartInstance.update();
+        console.log("Chart updated with data:", [correct, wrong, unanswered]);
+
+        const userID = sessionStorage.getItem("userID") || "anonymous";
+        document.getElementById("totalQuestions").innerText =
+          toBengaliNumber(total);
+        document.getElementById("answered").innerText =
+          toBengaliNumber(answered);
+        document.getElementById("correctAnswers").innerText =
+          toBengaliNumber(correct);
+        document.getElementById("wrongAnswers").innerText =
+          toBengaliNumber(wrong);
+        document.getElementById("unanswered").innerText =
+          toBengaliNumber(unanswered);
+        document.getElementById("finalScore").innerText = toBengaliNumber(
+          score.toFixed(2)
+        );
+
+        document.getElementById("formUserID").value = userID;
+        document.getElementById("formFinalScore").value = score.toFixed(2);
+        document.getElementById("formCorrectAnswers").value = correct;
+        document.getElementById("formWrongAnswers").value = wrong;
+        document.getElementById("formUnanswered").value = unanswered;
+
+        document.getElementById("submitBtn").style.display = "none";
+
+        document.getElementById("scorePopup").style.display = "block";
+
+        const form = document.getElementById("scoreForm");
+        fetch(form.action, {
+          method: "POST",
+          body: new FormData(form),
+          headers: {
+            Accept: "application/json",
+          },
+        })
+          .then((response) => {
+            if (response.ok) {
+              console.log("Form submitted successfully");
+              form.reset();
+            } else {
+              console.error("Form submission failed:", response.statusText);
+            }
+          })
+          .catch((error) => {
+            console.error("Error:", error);
+          });
+      }
+
+      function cancelSubmit() {
+        console.log("Canceling submission");
+        document.getElementById("confirmPopup").style.display = "none";
+      }
+
+      document
+        .getElementById("submitBtn")
+        .addEventListener("click", function () {
+          console.log("Submit button clicked");
+          showConfirmPopup();
+        });
+
+      function closePopup() {
+        console.log("Closing score popup");
+        const scorePopup = document.getElementById("scorePopup");
+        scorePopup.classList.add("slide-out");
+        setTimeout(() => {
+          scorePopup.style.display = "none";
+          scorePopup.classList.remove("slide-out");
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        }, 500);
+      }
+
+      document
+        .getElementById("scoreForm")
+        .addEventListener("submit", function (event) {
+          event.preventDefault();
+          console.log("Score form submitted");
+          closePopup();
+        });
+    </script>
+  </body>
+</html>
